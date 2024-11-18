@@ -388,18 +388,82 @@ while jugar:
             print("----------------------------------------")
             print("FINAL DE LA PARTIDA\n")
 
-            # Ordenar de mayor a menor los puntajes
+            # Ordenar de mayor a menor los jugadores segun sus puntajes
             ordenamientoBurbujaRecursivo(jugadores)
-
             jugadores = jugadores[::-1]
 
-            # Mostrar la lista ordenada de puntajes
+            #Se imprimen los resultados
             for i in range(len(jugadores)):
                 print(f"{i + 1} - {jugadores[i].get('nombre')} - Aciertos: {jugadores[i].get('aciertos')} - Errores: {jugadores[i].get('errores')} ")
                 print("----------------------------------------")
-            partida = False  # Cambia la variable partida para finalizar el bucle
     
+
+
+            # Verificar si hay algun empate
+            jugadoresEmpatados = []
+            if len(jugadores) > 1:
+                
+                # Funcion lambda en un filter para separar los jugadores que tuvieron la misma cantidad de aciertos
+                jugadoresEmpatados = list(filter(lambda jugador: jugador["aciertos"] == jugadores[0]["aciertos"], jugadores))
+
+                # En caso de empate se pone en juego un desempate
+                if len(jugadoresEmpatados) > 1:
+
+                    print("Se detecto un empate entre los siguientes jugadores: ")
+                    for i in range(len(jugadoresEmpatados)):
+                        print(f"{i + 1} - {jugadores[i]['nombre']} - Aciertos: {jugadores[i]['aciertos']} - Errores: {jugadores[i]['aciertos']} ")
+                        print("----------------------------------------")
+
+                # Se hace una ronda express para definir un ganador
+                print("A continuacion se llevara a cabo una ronda express para determinar el ganador")
+                print("")
+
+                ganador = False
+                jugadorFallido = []
     
+                while ganador == False:
+                    # Iterar sobre jugadores restantes
+                    try:
+                        for jugador in jugadoresEmpatados:
+                            auxLetra = random.randint(0, len(palabras) - 1)
+                            auxPalabra = random.randint(0, len(palabras[auxLetra]) - 1)
+
+                            print("----------------------------------------------------------")
+                            print(f"Turno de {jugador['nombre']}.")
+                            print("Es obligatorio arriesgar. En caso de no hacerlo, se considerara erroneo.")
+                            respuesta = input(f"{palabras[auxLetra][auxPalabra][1]}: ")
+
+                            # Validar respuesta
+                            if respuesta == palabras[auxLetra][auxPalabra][0]:
+                                print("CORRECTO!!!")
+                            else:
+                                print("INCORRECTO :(")
+                                jugadorFallido.append(jugador)
+
+                            # Eliminar palabra usada
+                            palabras[auxLetra].pop(auxPalabra)
+                        
+                        # Determinar el estado del juego
+                        if len(jugadorFallido) == len(jugadoresEmpatados):  # Todos fallaron
+                            print("Todos los jugadores fallaron. Continua la ronda.")
+                            jugadorFallido = []
+                        else:
+                            # Eliminar jugadores que fallaron
+                            jugadoresEmpatados = [
+                                jugador for jugador in jugadoresEmpatados if jugador not in jugadorFallido
+                            ]
+                            jugadorFallido = []  # Reiniciar lista de fallidos
+                        
+                        # Verificar si hay un ganador
+                        if len(jugadoresEmpatados) == 1:
+                            print(f"¡El ganador es {jugadoresEmpatados[0]['nombre']}!")
+                            ganador = True
+
+                            partida = False
+                    except IndexError:
+                        print("No existen mas palabras disponibles, se decidira el ganador por azar")
+                        
+
     valido = False
     while valido == False:
         try:

@@ -1,4 +1,5 @@
 import random
+from datetime import datetime
 
 #Declaramos la lista de listas con las que vamos a trabajar
 palabras = [
@@ -207,16 +208,16 @@ def crearJugadores():
             if 1 <= cantidadJugadores <= 5:
                 valido = True
             else:
-                print("Por favor, ingresa un número entre 1 y 5.")
+                print("Por favor, ingresa un número entre 1 y 5: ")
                 
         except ValueError:
-            print("El valor ingresado no es valido, por favor ingrese un numero entero entre 1 y 5")
+            print("El valor ingresado no es valido, por favor ingrese un numero entero entre 1 y 5: ")
 
     
 
     # Itera según la cantidad de jugadores especificada
     for i in range(cantidadJugadores):
-        nombre = input(f"ingrese el nombre del jugador numero {i+1}: ")
+        nombre = str(input(f"ingrese el nombre del jugador numero {i+1}: "))
 
         # Crea un diccionario para representar al jugador
         jugador = {
@@ -231,8 +232,6 @@ def crearJugadores():
         }
         listaJugadores.append(jugador)
     return listaJugadores
-
-
 
 def crearRosco(listaJugadores, palabras):
     """
@@ -289,10 +288,144 @@ def ordenamientoBurbujaRecursivo(lista, n=None):
     ordenamientoBurbujaRecursivo(lista, n-1)
 
 
-jugar = True
+# Funciones para historial con manejo de archivos 
+
+# Funcion para definir fecha y hora
+def definirHorario():
+    """
+    Crea y devuelve la fecha y la hora del momento en que se ejecuta
+
+    return:
+        una tupla con 2 variables donde indica por un lado la fecha y por el otro la hora
+    """
+    #Funcion para definir fecha y hora del momento en que se ejecuta
+
+    fechaHora = str(datetime.now())
+
+    partes = fechaHora.split(" ")
+
+    fecha = partes[0]
+    hora = partes[1][:5] 
+
+    horario = f"{fecha}|{hora}"
+
+    return horario
+
+
+#Funcion para almacenar historial de jugadores ganadores
+def guardarHistorialGanador(ganador):
+    historial = open("archivos/historial_ganadores.txt","a")
+
+    historial.write(f"{ganador['nombre']} | {definirHorario()}\n")
+
+    print("Se registraron los datos de la partida en el historial")
+    historial.close()
+
+
+#Funcion para definir historial de cada jugador
+def guardarHistorialJugador(jugador,resultado):
+
+    historialNombre = f"archivos/historial_{jugador['nombre']}.txt"
+    historial = open(historialNombre,"a")
+
+    historial.write(f'{definirHorario()} | {jugador["nombre"]} | {jugador["aciertos"]} | {jugador["errores"]} | {resultado} \n')
+
+    historial.close()
+
+#Funcion para mostrar en consola el historial de ganadores
+def verHistorialGanadores():
+    try:
+        contenido = open("archivos/historial_ganadores.txt", "r")
+        contenido = contenido.read()
+        renglones = contenido.split("\n")
+        historial = []
+        for renglon in renglones:
+            aux = renglon.split("|")
+            historial.append(aux)
+        for i in range(len(historial)-1):
+            print(f'Partida del{historial[i][1]} a las {historial[i][2]} - ganador: {historial[i][0]}')
+    except FileNotFoundError:
+        print("No se encontro un historial previo")
+
+def verHistorialJugador(jugador):
+    try:
+        contenido = open(f"archivos/historial_{jugador}.txt", "r")
+        contenido = contenido.read()
+        renglones = contenido.split("\n")
+        historial = []
+        for renglon in renglones:
+            aux = renglon.split("|")
+            historial.append(aux)
+        print("-----------------------------------------")
+        print(f"Historial de {jugador} ")
+        print("-----------------------------------------")
+        for i in range(len(historial)-1):
+            print(f'Partida del{historial[i][0]} a las {historial[i][1]} - Aciertos: {historial[i][3]} - Errores: {historial[i][4]} - Resultado: {historial[i][5]}')
+    except FileNotFoundError:
+        print("No se encontro un historial previo para esta persona")
+
+
+
+
+
+
+menu = True
+jugar = False
 partida = True
+empate = False
 jugadores = []
 turno = 0
+
+
+while menu:
+    eleccion = 0
+    print("Bienvenido a Letra a Letra!!!")
+
+    valido = False
+    while not valido:
+        try:
+            eleccion = int(input("Selecciona la opcion que deseas realizar\n 1. Jugar 2. Ver historial 3. Cerrar"))
+            valido = True
+        except ValueError:
+            print("El valor ingresado no es valido, por favor ingresa 1 para jugar, 2 para ver historial o 3 para cerrar: ")
+    
+    if eleccion == 1:
+        jugar = True
+        menu = False
+    elif eleccion == 2:
+        valido = False
+        while not valido:
+            try:
+                eleccion = int(input("1.Ver historial de ultimos ganadores \n2.Ver historial de un jugador en especifico"))
+                valido = True
+            except ValueError:
+                print("El valor ingresado no es valido, por favor ingresa 1 para ver el historial de ultimos ganadores o 2 para ver un historial en especifico: ")
+            if eleccion == 1:
+                verHistorialGanadores()
+                valido = False
+                while not valido:
+                    try:
+                        eleccion = int(input("Deseas volver al menu? 1.Si 2.No: "))
+                        valido = True
+                    except ValueError:
+                        print("El valor ingresado no es valido, por favor ingresa 1 si desea volver al menu, 2 para no: ")
+                if eleccion == 2:
+                    print("Muchas gracias!!!")
+                    menu = False
+            if eleccion == 2:
+                verHistorial = str(input("Ingrese el nombre del jugador: "))
+                verHistorialJugador(verHistorial)
+                valido = False
+                while not valido:
+                    try:
+                        eleccion = int(input("Deseas volver al menu? 1.Si 2.No: "))
+                        valido = True
+                    except ValueError:
+                        print("El valor ingresado no es valido, por favor ingresa 1 si desea volver al menu, 2 para no: ")
+                if eleccion == 2:
+                    print("Muchas gracias!!!")
+                    menu = False
+
 
 
 # Bucle principal que se ejecuta mientras la variable 'jugar' sea verdadera
@@ -403,27 +536,29 @@ while jugar:
             jugadoresEmpatados = []
             if len(jugadores) > 1:
                 
-                # Funcion lambda en un filter para separar los jugadores que tuvieron la misma cantidad de aciertos
+                #Funcion lambda en un filter para separar los jugadores que tuvieron la misma cantidad de aciertos
                 jugadoresEmpatados = list(filter(lambda jugador: jugador["aciertos"] == jugadores[0]["aciertos"], jugadores))
 
                 # En caso de empate se pone en juego un desempate
                 if len(jugadoresEmpatados) > 1:
+                    empate = True
 
                     print("Se detecto un empate entre los siguientes jugadores: ")
+                    print("")
                     for i in range(len(jugadoresEmpatados)):
-                        print(f"{i + 1} - {jugadores[i]['nombre']} - Aciertos: {jugadores[i]['aciertos']} - Errores: {jugadores[i]['aciertos']} ")
+                        print(f"{i + 1} - {jugadores[i]['nombre']} - Aciertos: {jugadores[i]['aciertos']} - Errores: {jugadores[i]['errores']} ")
                         print("----------------------------------------")
 
-                # Se hace una ronda express para definir un ganador
-                print("A continuacion se llevara a cabo una ronda express para determinar el ganador")
-                print("")
+                    # Se hace una ronda express para definir un ganador
+                    print("A continuacion se llevara a cabo una ronda express para determinar el ganador")
+                    print("")
 
-                ganador = False
-                jugadorFallido = []
-    
-                while ganador == False:
-                    # Iterar sobre jugadores restantes
-                    try:
+                    ganador = False
+                    jugadorFallido = []
+        
+                    while ganador == False:
+                        # iterar sobre jugadores restantes
+                        
                         for jugador in jugadoresEmpatados:
                             auxLetra = random.randint(0, len(palabras) - 1)
                             auxPalabra = random.randint(0, len(palabras[auxLetra]) - 1)
@@ -442,7 +577,7 @@ while jugar:
 
                             # Eliminar palabra usada
                             palabras[auxLetra].pop(auxPalabra)
-                        
+                            
                         # Determinar el estado del juego
                         if len(jugadorFallido) == len(jugadoresEmpatados):  # Todos fallaron
                             print("Todos los jugadores fallaron. Continua la ronda.")
@@ -453,17 +588,31 @@ while jugar:
                                 jugador for jugador in jugadoresEmpatados if jugador not in jugadorFallido
                             ]
                             jugadorFallido = []  # Reiniciar lista de fallidos
-                        
-                        # Verificar si hay un ganador
+                            
+                        # Verificar si hay un ganador y termina la partida en caso de haberlo
                         if len(jugadoresEmpatados) == 1:
                             print(f"¡El ganador es {jugadoresEmpatados[0]['nombre']}!")
+                            guardarHistorialGanador(jugadoresEmpatados[0])
+                            for jugador in jugadores:
+                                if jugador == jugadoresEmpatados[0]:
+                                    guardarHistorialJugador(jugador,'ganador')
+                                else:
+                                    guardarHistorialJugador(jugador,'no ganador')
                             ganador = True
-
                             partida = False
-                    except IndexError:
-                        print("No existen mas palabras disponibles, se decidira el ganador por azar")
-                        
 
+
+            if not empate:
+                guardarHistorialGanador(jugadores[0])
+
+                for jugador in jugadores:
+                    if jugadores[0] == jugador:
+                        guardarHistorialJugador(jugador,'ganador')
+                    else:
+                        guardarHistorialJugador(jugador,'no ganador')
+                partida = False     
+
+    # Consulta para volver a jugar o si se desea terminar la ejecucion del programa                                   
     valido = False
     while valido == False:
         try:

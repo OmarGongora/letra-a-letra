@@ -84,6 +84,9 @@ def crearRosco(listaJugadores, palabras):
         jugador.update(listaPalabrasCompletadas)
 
 def actualizarPosicion(listaJugadores, turno):
+    """
+        Esta funcion sirve para actualizar el turno del jugador correspondiente
+    """
     if len(set(listaJugadores[turno]["rosco"]).difference(set(listaJugadores[turno]["palabrasCompletadas"]))) > 0:  # Si aún hay letras por completar               
         if listaJugadores[turno]["posicion"] == len(listaJugadores[turno]["rosco"]) - 1:
             listaJugadores[turno].update({"posicion": 0})  # Vuelve al inicio si está en la última letra
@@ -91,6 +94,9 @@ def actualizarPosicion(listaJugadores, turno):
             listaJugadores[turno].update({"posicion": listaJugadores[turno]["posicion"] + 1})  # Avanza a la siguiente letra
 
 def ordenamientoBurbujaRecursivo(lista, n=None):
+    """
+    Esta funcion ordena una lista de menor a mayor dependiendo la cantidad de acierto de los jugadores
+    """
     if n is None:
         n = len(lista)
     
@@ -134,6 +140,9 @@ def definirHorario():
 
 #Funcion para almacenar historial de jugadores ganadores
 def guardarHistorialGanador(ganador):
+    """
+        Abre el archivo de texto donde se escribira y guardara el ganador y el horario de la partida jugada
+    """
     historial = open("archivos/historial_ganadores.txt","a")
 
     historial.write(f"{ganador['nombre']} | {definirHorario()}\n")
@@ -144,7 +153,10 @@ def guardarHistorialGanador(ganador):
 
 #Funcion para definir historial de cada jugador
 def guardarHistorialJugador(jugador,resultado):
-
+    """
+        Abre el archivo de texto donde se escribira y guardara el jugador y el horario de la partida jugada
+  
+    """
     historialNombre = f"archivos/historial_{jugador['nombre']}.txt"
     historial = open(historialNombre,"a")
 
@@ -154,6 +166,9 @@ def guardarHistorialJugador(jugador,resultado):
 
 #Funcion para mostrar en consola el historial de ganadores
 def verHistorialGanadores():
+    """
+        Esta funcion sirve para mostrar el historial de todos los ganadores
+    """
     try:
         archivo = open("archivos/historial_ganadores.txt", "r")
         contenido = archivo.read()
@@ -170,6 +185,9 @@ def verHistorialGanadores():
     
 
 def verHistorialJugador(jugador):
+    """
+        Esta funcion sirve para mostrar el historial de un jugador en especifico
+    """
     try:
         archivo = open(f"archivos/historial_{jugador}.txt", "r")
         contenido = archivo.read()
@@ -188,6 +206,9 @@ def verHistorialJugador(jugador):
         print("No se encontro un historial previo para esta persona")
 
 def verEstadisticasJugador(jugador):
+    """
+        Funcion que sirve para mostrar el porcentaje de efectividad que tuvo un jugador en especifico en respecto a aciertos y partidas
+    """
     try:
         archivo = open(f"archivos/historial_{jugador}.txt", "r")
         contenido = archivo.read()
@@ -317,8 +338,8 @@ while menu:
                     if eleccion == 2:
                         print("Muchas gracias!!!")
                         menu = False
-                  
-
+    else:
+        menu = False
 
 
 

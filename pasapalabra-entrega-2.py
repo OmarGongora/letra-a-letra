@@ -1,5 +1,6 @@
 import random
 from datetime import datetime
+from functools import reduce
 
 #Declaramos la lista de listas con las que vamos a trabajar
 palabras = [
@@ -287,6 +288,8 @@ def ordenamientoBurbujaRecursivo(lista, n=None):
     
     ordenamientoBurbujaRecursivo(lista, n-1)
 
+calcularPorcentaje = lambda ganadas, totales: (ganadas / totales) * 100 if totales > 0 else 0
+
 
 # Funciones para historial con manejo de archivos 
 
@@ -335,8 +338,8 @@ def guardarHistorialJugador(jugador,resultado):
 #Funcion para mostrar en consola el historial de ganadores
 def verHistorialGanadores():
     try:
-        contenido = open("archivos/historial_ganadores.txt", "r")
-        contenido = contenido.read()
+        archivo = open("archivos/historial_ganadores.txt", "r")
+        contenido = archivo.read()
         renglones = contenido.split("\n")
         historial = []
         for renglon in renglones:
@@ -344,13 +347,15 @@ def verHistorialGanadores():
             historial.append(aux)
         for i in range(len(historial)-1):
             print(f'Partida del{historial[i][1]} a las {historial[i][2]} - ganador: {historial[i][0]}')
+        archivo.close()
     except FileNotFoundError:
         print("No se encontro un historial previo")
+    
 
 def verHistorialJugador(jugador):
     try:
-        contenido = open(f"archivos/historial_{jugador}.txt", "r")
-        contenido = contenido.read()
+        archivo = open(f"archivos/historial_{jugador}.txt", "r")
+        contenido = archivo.read()
         renglones = contenido.split("\n")
         historial = []
         for renglon in renglones:
@@ -361,10 +366,56 @@ def verHistorialJugador(jugador):
         print("-----------------------------------------")
         for i in range(len(historial)-1):
             print(f'Partida del{historial[i][0]} a las {historial[i][1]} - Aciertos: {historial[i][3]} - Errores: {historial[i][4]} - Resultado: {historial[i][5]}')
+        archivo.close()
     except FileNotFoundError:
         print("No se encontro un historial previo para esta persona")
 
+def verEstadisticasJugador(jugador):
+    try:
+        archivo = open(f"archivos/historial_{jugador}.txt", "r")
+        contenido = archivo.read()
+        renglones = contenido.split("\n")
+        historial = []
 
+        aciertos = []
+        errores = []
+        victorias = []
+        derrotas = []
+
+
+        for renglon in renglones:
+            aux = renglon.split("|")
+            historial.append(aux)
+
+
+        for i in range(len(historial)-1):
+            aciertos.append(historial[i][3])
+            errores.append(historial[i][4]) 
+
+            # Clasificar la partida como victoria o derrota
+            if historial[i][5].strip() == 'ganador':
+                victorias.append(1)
+            else:
+                derrotas.append(1)
+
+        aciertos = map(int, aciertos)
+        errores = map(int, errores)
+
+        totalAciertos = reduce(lambda x, y: x + y, aciertos, 0) 
+        totalErrores = reduce(lambda x, y: x + y, errores, 0)
+        totalPuntos = totalAciertos + totalErrores
+        totalVictorias = len(victorias)
+        totalDerrotas = len(derrotas)
+        totalPartidas = totalVictorias + totalDerrotas
+
+
+        print(f'El jugador {jugador} tuvo un total de {totalAciertos} aciertos en todas sus partida y {totalErrores} errores \nDando asi un {calcularPorcentaje(totalAciertos,totalPuntos)}% de efectividad al contestar')
+        print(f'Por otra parte {jugador} presenta {totalVictorias} victorias y {totalDerrotas}, dando un {calcularPorcentaje(totalVictorias,totalPartidas)}% de efectividad en partidas')
+
+        
+        archivo.close()
+    except FileNotFoundError:
+        print("No se encontro un historial previo para esta persona")
 
 
 
@@ -384,7 +435,7 @@ while menu:
     valido = False
     while not valido:
         try:
-            eleccion = int(input("Selecciona la opcion que deseas realizar\n 1. Jugar 2. Ver historial 3. Cerrar"))
+            eleccion = int(input("Selecciona la opcion que deseas realizar\n 1. Jugar 2. Ver historial 3. Cerrar \n"))
             valido = True
         except ValueError:
             print("El valor ingresado no es valido, por favor ingresa 1 para jugar, 2 para ver historial o 3 para cerrar: ")
@@ -396,7 +447,7 @@ while menu:
         valido = False
         while not valido:
             try:
-                eleccion = int(input("1.Ver historial de ultimos ganadores \n2.Ver historial de un jugador en especifico"))
+                eleccion = int(input("1.Ver historial de ultimos ganadores \n2.Ver historial de un jugador en especifico\n"))
                 valido = True
             except ValueError:
                 print("El valor ingresado no es valido, por favor ingresa 1 para ver el historial de ultimos ganadores o 2 para ver un historial en especifico: ")
@@ -405,7 +456,7 @@ while menu:
                 valido = False
                 while not valido:
                     try:
-                        eleccion = int(input("Deseas volver al menu? 1.Si 2.No: "))
+                        eleccion = int(input("Deseas volver al menu? 1.Si 2.No: \n"))
                         valido = True
                     except ValueError:
                         print("El valor ingresado no es valido, por favor ingresa 1 si desea volver al menu, 2 para no: ")
@@ -415,16 +466,44 @@ while menu:
             if eleccion == 2:
                 verHistorial = str(input("Ingrese el nombre del jugador: "))
                 verHistorialJugador(verHistorial)
+
                 valido = False
                 while not valido:
                     try:
-                        eleccion = int(input("Deseas volver al menu? 1.Si 2.No: "))
+                        eleccion = int(input("Deseas mostrar estadisticas del jugador? 1.Si 2.No: "))
                         valido = True
                     except ValueError:
-                        print("El valor ingresado no es valido, por favor ingresa 1 si desea volver al menu, 2 para no: ")
+                        print("El valor ingresado no es valido, por favor ingresa 1 para si, 2 para no: ")
                 if eleccion == 2:
-                    print("Muchas gracias!!!")
-                    menu = False
+                    valido = False
+                    while not valido:
+                        try:
+                            eleccion = int(input("Deseas volver al menu? 1.Si 2.No: "))
+                            valido = True
+                        except ValueError:
+                            print("El valor ingresado no es valido, por favor ingresa 1 si desea volver al menu, 2 para no: ")
+                    if eleccion == 2:
+                        print("Muchas gracias!!!")
+                        menu = False
+                else:
+                    verEstadisticasJugador(verHistorial)
+                    valido = False
+                    while not valido:
+                        try:
+                            eleccion = int(input("Deseas volver al menu? 1.Si 2.No: "))
+                            valido = True
+                        except ValueError:
+                            print("El valor ingresado no es valido, por favor ingresa 1 si desea volver al menu, 2 para no: ")
+                    if eleccion == 2:
+                        print("Muchas gracias!!!")
+                        menu = False
+                  
+
+
+
+
+
+                
 
 
 

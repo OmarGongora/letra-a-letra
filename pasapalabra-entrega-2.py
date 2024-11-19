@@ -3,7 +3,333 @@ from datetime import datetime
 from functools import reduce
 
 #Declaramos la lista de listas con las que vamos a trabajar
-palabras = [
+
+
+def crearJugadores():
+    """
+    Crea una lista de jugadores a partir de la entrada del usuario.
+
+    Return: 
+        una lista de diccionarios donde cada diccionario representa la informacion del jugador
+    """
+    listaJugadores = []
+
+    # Solicita al usuario la cantidad de jugadores, con rango válido entre 1 y 5
+    # y captura el error en caso de ingresar un dato invalido
+    valido = False
+    while valido == False:
+        try:
+            cantidadJugadores = int(input("¿Cuántos jugadores formarán parte de la partida? \nEl rango debe ser entre 1 y 4 jugadores: "))
+            
+            # Verifica que el número esté dentro del rango permitido
+            if 1 <= cantidadJugadores <= 4:
+                valido = True
+            else:
+                print("Por favor, ingresa un número entre 1 y 4: ")
+                
+        except ValueError:
+            print("El valor ingresado no es valido, por favor ingrese un numero entero entre 1 y 4: ")
+
+    
+
+    # Itera según la cantidad de jugadores especificada
+    for i in range(cantidadJugadores):
+        nombre = str(input(f"ingrese el nombre del jugador numero {i+1}: "))
+
+        # Crea un diccionario para representar al jugador
+        jugador = {
+            "jugador": i,
+            "nombre": nombre,
+            "errores": 0,
+            "aciertos": 0,
+            "posicion": 0,
+            "rosco": [],
+            "palabrasCompletadas": [],
+            "completado": False
+        }
+        listaJugadores.append(jugador)
+    return listaJugadores
+
+def crearRosco(listaJugadores, palabras):
+    """
+    Crea un "rosco" para cada jugador a partir de una lista de palabras.
+
+    Argumentos:
+        listaJugadores:lista de diccionarios que representan a los jugadores
+        palabras:lista de palabras
+
+    Returns:
+        La funcion retorna la lista de jugadores actualizada
+    """
+
+
+    # Itera sobre cada jugador en la lista de jugadores
+    for jugador in listaJugadores:
+        nuevoRosco = []
+        palabrasCompletadas = []
+
+        # Itera sobre cada palabra en la lista de palabras
+        for palabra in palabras:
+            aux = random.randint(0, len(palabra)-1)
+            nuevoRosco.append(palabra[aux])
+            palabra.pop(aux)
+        # Crea un diccionario con el rosco generado
+        rosco = {"rosco": nuevoRosco}
+
+        # Crea un diccionario para llevar el seguimiento de letras completadas
+        listaPalabrasCompletadas = {"palabrasCompletadas": palabrasCompletadas}
+
+        # Actualiza el diccionario del jugador con el rosco y las letras completadas
+        jugador.update(rosco)
+        jugador.update(listaPalabrasCompletadas)
+
+def actualizarPosicion(listaJugadores, turno):
+    if len(set(listaJugadores[turno]["rosco"]).difference(set(listaJugadores[turno]["palabrasCompletadas"]))) > 0:  # Si aún hay letras por completar               
+        if listaJugadores[turno]["posicion"] == len(listaJugadores[turno]["rosco"]) - 1:
+            listaJugadores[turno].update({"posicion": 0})  # Vuelve al inicio si está en la última letra
+        else:
+            listaJugadores[turno].update({"posicion": listaJugadores[turno]["posicion"] + 1})  # Avanza a la siguiente letra
+
+def ordenamientoBurbujaRecursivo(lista, n=None):
+    if n is None:
+        n = len(lista)
+    
+    if n <= 1:
+        return
+    
+    for i in range(n-1):
+        if lista[i]["aciertos"] > lista[i+1]["aciertos"]:
+            aux = lista[i]
+            lista[i] = lista[i+1]
+            lista[i+1] = aux
+    
+    ordenamientoBurbujaRecursivo(lista, n-1)
+
+calcularPorcentaje = lambda ganadas, totales: (ganadas / totales) * 100 if totales > 0 else 0
+
+
+# Funciones para historial con manejo de archivos 
+
+# Funcion para definir fecha y hora
+def definirHorario():
+    """
+    Crea y devuelve la fecha y la hora del momento en que se ejecuta
+
+    return:
+        una tupla con 2 variables donde indica por un lado la fecha y por el otro la hora
+    """
+    #Funcion para definir fecha y hora del momento en que se ejecuta
+
+    fechaHora = str(datetime.now())
+
+    partes = fechaHora.split(" ")
+
+    fecha = partes[0]
+    hora = partes[1][:5] 
+
+    horario = f"{fecha}|{hora}"
+
+    return horario
+
+
+#Funcion para almacenar historial de jugadores ganadores
+def guardarHistorialGanador(ganador):
+    historial = open("archivos/historial_ganadores.txt","a")
+
+    historial.write(f"{ganador['nombre']} | {definirHorario()}\n")
+
+    print("Se registraron los datos de la partida en el historial")
+    historial.close()
+
+
+#Funcion para definir historial de cada jugador
+def guardarHistorialJugador(jugador,resultado):
+
+    historialNombre = f"archivos/historial_{jugador['nombre']}.txt"
+    historial = open(historialNombre,"a")
+
+    historial.write(f'{definirHorario()} | {jugador["nombre"]} | {jugador["aciertos"]} | {jugador["errores"]} | {resultado} \n')
+
+    historial.close()
+
+#Funcion para mostrar en consola el historial de ganadores
+def verHistorialGanadores():
+    try:
+        archivo = open("archivos/historial_ganadores.txt", "r")
+        contenido = archivo.read()
+        renglones = contenido.split("\n")
+        historial = []
+        for renglon in renglones:
+            aux = renglon.split("|")
+            historial.append(aux)
+        for i in range(len(historial)-1):
+            print(f'Partida del{historial[i][1]} a las {historial[i][2]} - ganador: {historial[i][0]}')
+        archivo.close()
+    except FileNotFoundError:
+        print("No se encontro un historial previo")
+    
+
+def verHistorialJugador(jugador):
+    try:
+        archivo = open(f"archivos/historial_{jugador}.txt", "r")
+        contenido = archivo.read()
+        renglones = contenido.split("\n")
+        historial = []
+        for renglon in renglones:
+            aux = renglon.split("|")
+            historial.append(aux)
+        print("-----------------------------------------")
+        print(f"Historial de {jugador} ")
+        print("-----------------------------------------")
+        for i in range(len(historial)-1):
+            print(f'Partida del{historial[i][0]} a las {historial[i][1]} - Aciertos: {historial[i][3]} - Errores: {historial[i][4]} - Resultado: {historial[i][5]}')
+        archivo.close()
+    except FileNotFoundError:
+        print("No se encontro un historial previo para esta persona")
+
+def verEstadisticasJugador(jugador):
+    try:
+        archivo = open(f"archivos/historial_{jugador}.txt", "r")
+        contenido = archivo.read()
+        renglones = contenido.split("\n")
+        historial = []
+
+        aciertos = []
+        errores = []
+        victorias = []
+        derrotas = []
+
+
+        for renglon in renglones:
+            aux = renglon.split("|")
+            historial.append(aux)
+
+
+        for i in range(len(historial)-1):
+            aciertos.append(historial[i][3])
+            errores.append(historial[i][4]) 
+
+            # Clasificar la partida como victoria o derrota
+            if historial[i][5].strip() == 'ganador':
+                victorias.append(1)
+            else:
+                derrotas.append(1)
+
+        aciertos = map(int, aciertos)
+        errores = map(int, errores)
+
+        totalAciertos = reduce(lambda x, y: x + y, aciertos, 0) 
+        totalErrores = reduce(lambda x, y: x + y, errores, 0)
+        totalPuntos = totalAciertos + totalErrores
+        totalVictorias = len(victorias)
+        totalDerrotas = len(derrotas)
+        totalPartidas = totalVictorias + totalDerrotas
+
+
+        print(f'El jugador {jugador} tuvo un total de {totalAciertos} aciertos en todas sus partidas y {totalErrores} errores \nDando asi un {calcularPorcentaje(totalAciertos,totalPuntos)}% de efectividad al contestar')
+        print(f'Por otra parte {jugador} presenta {totalVictorias} victorias y {totalDerrotas} derrotas, dando un {calcularPorcentaje(totalVictorias,totalPartidas)}% de efectividad en partidas')
+
+        
+        archivo.close()
+    except FileNotFoundError:
+        print("No se encontro un historial previo para esta persona")
+
+
+
+
+menu = True
+jugar = False
+partida = True
+empate = False
+jugadores = []
+turno = 0
+
+
+while menu:
+    eleccion = 0
+    print("Bienvenido a Letra a Letra!!!")
+
+    valido = False
+    while not valido:
+        try:
+            eleccion = int(input("Selecciona la opcion que deseas realizar\n 1. Jugar 2. Ver historial 3. Cerrar \n"))
+            valido = True
+        except ValueError:
+            print("El valor ingresado no es valido, por favor ingresa 1 para jugar, 2 para ver historial o 3 para cerrar: ")
+    
+    if eleccion == 1:
+        jugar = True
+        menu = False
+    elif eleccion == 2:
+        valido = False
+        while not valido:
+            try:
+                eleccion = int(input("1.Ver historial de ultimos ganadores \n2.Ver historial de un jugador en especifico\n"))
+                valido = True
+            except ValueError:
+                print("El valor ingresado no es valido, por favor ingresa 1 para ver el historial de ultimos ganadores o 2 para ver un historial en especifico: ")
+            if eleccion == 1:
+                verHistorialGanadores()
+                valido = False
+                while not valido:
+                    try:
+                        eleccion = int(input("Deseas volver al menu? 1.Si 2.No: \n"))
+                        valido = True
+                    except ValueError:
+                        print("El valor ingresado no es valido, por favor ingresa 1 si desea volver al menu, 2 para no: ")
+                if eleccion == 2:
+                    print("Muchas gracias!!!")
+                    jugar = False
+                    menu = False
+                    eleccion = None
+                
+            if eleccion == 2:
+                verHistorial = str(input("Ingrese el nombre del jugador: "))
+                verHistorialJugador(verHistorial)
+
+                valido = False
+                while not valido:
+                    try:
+                        eleccion = int(input("Deseas mostrar estadisticas del jugador? 1.Si 2.No: "))
+                        valido = True
+                    except ValueError:
+                        print("El valor ingresado no es valido, por favor ingresa 1 para si, 2 para no: ")
+                if eleccion == 2:
+                    valido = False
+                    while not valido:
+                        try:
+                            eleccion = int(input("Deseas volver al menu? 1.Si 2.No: "))
+                            valido = True
+                        except ValueError:
+                            print("El valor ingresado no es valido, por favor ingresa 1 si desea volver al menu, 2 para no: ")
+                    if eleccion == 2:
+                        print("Muchas gracias!!!")
+                        menu = False
+                else:
+                    verEstadisticasJugador(verHistorial)
+                    valido = False
+                    while not valido:
+                        try:
+                            eleccion = int(input("Deseas volver al menu? 1.Si 2.No: "))
+                            valido = True
+                        except ValueError:
+                            print("El valor ingresado no es valido, por favor ingresa 1 si desea volver al menu, 2 para no: ")
+                    if eleccion == 2:
+                        print("Muchas gracias!!!")
+                        menu = False
+                  
+
+
+
+
+
+                
+
+
+
+# Bucle principal que se ejecuta mientras la variable 'jugar' sea verdadera
+while jugar:
+    palabras = [
     [
         ("avion","Con la letra A, medio de transporte aereo impulsado por motores."),
         ("argentina", "Con la letra A, pais sudamericano conocido por el tango, el futbol y el mate."),
@@ -189,326 +515,8 @@ palabras = [
 ]
 
 
-def crearJugadores():
-    """
-    Crea una lista de jugadores a partir de la entrada del usuario.
-
-    Return: 
-        una lista de diccionarios donde cada diccionario representa la informacion del jugador
-    """
-    listaJugadores = []
-
-    # Solicita al usuario la cantidad de jugadores, con rango válido entre 1 y 5
-    # y captura el error en caso de ingresar un dato invalido
-    valido = False
-    while valido == False:
-        try:
-            cantidadJugadores = int(input("¿Cuántos jugadores formarán parte de la partida? \nEl rango debe ser entre 1 y 5 jugadores: "))
-            
-            # Verifica que el número esté dentro del rango permitido
-            if 1 <= cantidadJugadores <= 5:
-                valido = True
-            else:
-                print("Por favor, ingresa un número entre 1 y 5: ")
-                
-        except ValueError:
-            print("El valor ingresado no es valido, por favor ingrese un numero entero entre 1 y 5: ")
-
-    
-
-    # Itera según la cantidad de jugadores especificada
-    for i in range(cantidadJugadores):
-        nombre = str(input(f"ingrese el nombre del jugador numero {i+1}: "))
-
-        # Crea un diccionario para representar al jugador
-        jugador = {
-            "jugador": i,
-            "nombre": nombre,
-            "errores": 0,
-            "aciertos": 0,
-            "posicion": 0,
-            "rosco": [],
-            "palabrasCompletadas": [],
-            "completado": False
-        }
-        listaJugadores.append(jugador)
-    return listaJugadores
-
-def crearRosco(listaJugadores, palabras):
-    """
-    Crea un "rosco" para cada jugador a partir de una lista de palabras.
-
-    Argumentos:
-        listaJugadores:lista de diccionarios que representan a los jugadores
-        palabras:lista de palabras
-
-    Returns:
-        La funcion retorna la lista de jugadores actualizada
-    """
-
-    # Itera sobre cada jugador en la lista de jugadores
-    for jugador in listaJugadores:
-        nuevoRosco = []
-        palabrasCompletadas = []
-
-        # Itera sobre cada palabra en la lista de palabras
-        for palabra in palabras:
-            aux = random.randint(0, len(palabra)-1)
-            nuevoRosco.append(palabra[aux])
-            palabra.pop(aux)
-        # Crea un diccionario con el rosco generado
-        rosco = {"rosco": nuevoRosco}
-
-        # Crea un diccionario para llevar el seguimiento de letras completadas
-        listaPalabrasCompletadas = {"palabrasCompletadas": palabrasCompletadas}
-
-        # Actualiza el diccionario del jugador con el rosco y las letras completadas
-        jugador.update(rosco)
-        jugador.update(listaPalabrasCompletadas)
-
-def actualizarPosicion(listaJugadores, turno):
-    if len(set(listaJugadores[turno]["rosco"]).difference(set(listaJugadores[turno]["palabrasCompletadas"]))) > 0:  # Si aún hay letras por completar               
-        if listaJugadores[turno]["posicion"] == len(listaJugadores[turno]["rosco"]) - 1:
-            listaJugadores[turno].update({"posicion": 0})  # Vuelve al inicio si está en la última letra
-        else:
-            listaJugadores[turno].update({"posicion": listaJugadores[turno]["posicion"] + 1})  # Avanza a la siguiente letra
-
-def ordenamientoBurbujaRecursivo(lista, n=None):
-    if n is None:
-        n = len(lista)
-    
-    if n <= 1:
-        return
-    
-    for i in range(n-1):
-        if lista[i]["aciertos"] > lista[i+1]["aciertos"]:
-            aux = lista[i]
-            lista[i] = lista[i+1]
-            lista[i+1] = aux
-    
-    ordenamientoBurbujaRecursivo(lista, n-1)
-
-calcularPorcentaje = lambda ganadas, totales: (ganadas / totales) * 100 if totales > 0 else 0
 
 
-# Funciones para historial con manejo de archivos 
-
-# Funcion para definir fecha y hora
-def definirHorario():
-    """
-    Crea y devuelve la fecha y la hora del momento en que se ejecuta
-
-    return:
-        una tupla con 2 variables donde indica por un lado la fecha y por el otro la hora
-    """
-    #Funcion para definir fecha y hora del momento en que se ejecuta
-
-    fechaHora = str(datetime.now())
-
-    partes = fechaHora.split(" ")
-
-    fecha = partes[0]
-    hora = partes[1][:5] 
-
-    horario = f"{fecha}|{hora}"
-
-    return horario
-
-
-#Funcion para almacenar historial de jugadores ganadores
-def guardarHistorialGanador(ganador):
-    historial = open("archivos/historial_ganadores.txt","a")
-
-    historial.write(f"{ganador['nombre']} | {definirHorario()}\n")
-
-    print("Se registraron los datos de la partida en el historial")
-    historial.close()
-
-
-#Funcion para definir historial de cada jugador
-def guardarHistorialJugador(jugador,resultado):
-
-    historialNombre = f"archivos/historial_{jugador['nombre']}.txt"
-    historial = open(historialNombre,"a")
-
-    historial.write(f'{definirHorario()} | {jugador["nombre"]} | {jugador["aciertos"]} | {jugador["errores"]} | {resultado} \n')
-
-    historial.close()
-
-#Funcion para mostrar en consola el historial de ganadores
-def verHistorialGanadores():
-    try:
-        archivo = open("archivos/historial_ganadores.txt", "r")
-        contenido = archivo.read()
-        renglones = contenido.split("\n")
-        historial = []
-        for renglon in renglones:
-            aux = renglon.split("|")
-            historial.append(aux)
-        for i in range(len(historial)-1):
-            print(f'Partida del{historial[i][1]} a las {historial[i][2]} - ganador: {historial[i][0]}')
-        archivo.close()
-    except FileNotFoundError:
-        print("No se encontro un historial previo")
-    
-
-def verHistorialJugador(jugador):
-    try:
-        archivo = open(f"archivos/historial_{jugador}.txt", "r")
-        contenido = archivo.read()
-        renglones = contenido.split("\n")
-        historial = []
-        for renglon in renglones:
-            aux = renglon.split("|")
-            historial.append(aux)
-        print("-----------------------------------------")
-        print(f"Historial de {jugador} ")
-        print("-----------------------------------------")
-        for i in range(len(historial)-1):
-            print(f'Partida del{historial[i][0]} a las {historial[i][1]} - Aciertos: {historial[i][3]} - Errores: {historial[i][4]} - Resultado: {historial[i][5]}')
-        archivo.close()
-    except FileNotFoundError:
-        print("No se encontro un historial previo para esta persona")
-
-def verEstadisticasJugador(jugador):
-    try:
-        archivo = open(f"archivos/historial_{jugador}.txt", "r")
-        contenido = archivo.read()
-        renglones = contenido.split("\n")
-        historial = []
-
-        aciertos = []
-        errores = []
-        victorias = []
-        derrotas = []
-
-
-        for renglon in renglones:
-            aux = renglon.split("|")
-            historial.append(aux)
-
-
-        for i in range(len(historial)-1):
-            aciertos.append(historial[i][3])
-            errores.append(historial[i][4]) 
-
-            # Clasificar la partida como victoria o derrota
-            if historial[i][5].strip() == 'ganador':
-                victorias.append(1)
-            else:
-                derrotas.append(1)
-
-        aciertos = map(int, aciertos)
-        errores = map(int, errores)
-
-        totalAciertos = reduce(lambda x, y: x + y, aciertos, 0) 
-        totalErrores = reduce(lambda x, y: x + y, errores, 0)
-        totalPuntos = totalAciertos + totalErrores
-        totalVictorias = len(victorias)
-        totalDerrotas = len(derrotas)
-        totalPartidas = totalVictorias + totalDerrotas
-
-
-        print(f'El jugador {jugador} tuvo un total de {totalAciertos} aciertos en todas sus partida y {totalErrores} errores \nDando asi un {calcularPorcentaje(totalAciertos,totalPuntos)}% de efectividad al contestar')
-        print(f'Por otra parte {jugador} presenta {totalVictorias} victorias y {totalDerrotas}, dando un {calcularPorcentaje(totalVictorias,totalPartidas)}% de efectividad en partidas')
-
-        
-        archivo.close()
-    except FileNotFoundError:
-        print("No se encontro un historial previo para esta persona")
-
-
-
-
-menu = True
-jugar = False
-partida = True
-empate = False
-jugadores = []
-turno = 0
-
-
-while menu:
-    eleccion = 0
-    print("Bienvenido a Letra a Letra!!!")
-
-    valido = False
-    while not valido:
-        try:
-            eleccion = int(input("Selecciona la opcion que deseas realizar\n 1. Jugar 2. Ver historial 3. Cerrar \n"))
-            valido = True
-        except ValueError:
-            print("El valor ingresado no es valido, por favor ingresa 1 para jugar, 2 para ver historial o 3 para cerrar: ")
-    
-    if eleccion == 1:
-        jugar = True
-        menu = False
-    elif eleccion == 2:
-        valido = False
-        while not valido:
-            try:
-                eleccion = int(input("1.Ver historial de ultimos ganadores \n2.Ver historial de un jugador en especifico\n"))
-                valido = True
-            except ValueError:
-                print("El valor ingresado no es valido, por favor ingresa 1 para ver el historial de ultimos ganadores o 2 para ver un historial en especifico: ")
-            if eleccion == 1:
-                verHistorialGanadores()
-                valido = False
-                while not valido:
-                    try:
-                        eleccion = int(input("Deseas volver al menu? 1.Si 2.No: \n"))
-                        valido = True
-                    except ValueError:
-                        print("El valor ingresado no es valido, por favor ingresa 1 si desea volver al menu, 2 para no: ")
-                if eleccion == 2:
-                    print("Muchas gracias!!!")
-                    menu = False
-            if eleccion == 2:
-                verHistorial = str(input("Ingrese el nombre del jugador: "))
-                verHistorialJugador(verHistorial)
-
-                valido = False
-                while not valido:
-                    try:
-                        eleccion = int(input("Deseas mostrar estadisticas del jugador? 1.Si 2.No: "))
-                        valido = True
-                    except ValueError:
-                        print("El valor ingresado no es valido, por favor ingresa 1 para si, 2 para no: ")
-                if eleccion == 2:
-                    valido = False
-                    while not valido:
-                        try:
-                            eleccion = int(input("Deseas volver al menu? 1.Si 2.No: "))
-                            valido = True
-                        except ValueError:
-                            print("El valor ingresado no es valido, por favor ingresa 1 si desea volver al menu, 2 para no: ")
-                    if eleccion == 2:
-                        print("Muchas gracias!!!")
-                        menu = False
-                else:
-                    verEstadisticasJugador(verHistorial)
-                    valido = False
-                    while not valido:
-                        try:
-                            eleccion = int(input("Deseas volver al menu? 1.Si 2.No: "))
-                            valido = True
-                        except ValueError:
-                            print("El valor ingresado no es valido, por favor ingresa 1 si desea volver al menu, 2 para no: ")
-                    if eleccion == 2:
-                        print("Muchas gracias!!!")
-                        menu = False
-                  
-
-
-
-
-
-                
-
-
-
-# Bucle principal que se ejecuta mientras la variable 'jugar' sea verdadera
-while jugar:
     jugadores = crearJugadores()  # Llama a la función para crear jugadores y almacena la lista resultante
     crearRosco(jugadores, palabras)  # Llama a la función para crear el rosco para cada jugador
 
@@ -708,3 +716,8 @@ while jugar:
     if respuesta == 2:
         print("Muchas gracias por jugar")
         jugar = False
+    else:
+        empate = False
+        jugadores = []
+        turno = 0
+        partida = True
